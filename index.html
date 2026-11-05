@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101c33">
+<title>Muqeet OS — Desktop</title>
+<style>
+:root{
+  color-scheme:light;
+  --accent:#1687e8;
+  --accent-rgb:22,135,232;
+  --text:#19283b;
+  --muted:#758397;
+  --surface:#f7f9fc;
+  --panel:#ffffff;
+  --line:#e4e9f0;
+  --hover:#eef3f8;
+  --glass:rgba(248,251,255,.92);
+  --shadow:0 24px 70px rgba(0,15,37,.28);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;font-family:"Segoe UI Variable","Segoe UI",Arial,sans-serif}
+body{color:var(--text);background:#09172b}
+button,input,textarea{font:inherit}
+button{color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#desktop{
+  --wallpaper:linear-gradient(130deg,#081832 2%,#07578a 58%,#16a4ad 100%);
+  position:relative;height:100%;overflow:hidden;
+  background:var(--wallpaper);isolation:isolate;
+}
+#desktop:before,#desktop:after{content:"";position:absolute;inset:0;pointer-events:none}
+#desktop:before{
+  z-index:-1;
+  background:radial-gradient(ellipse at 70% 40%,rgba(81,222,230,.58),transparent 28%),
+             radial-gradient(ellipse at 67% 46%,rgba(27,131,227,.58),transparent 49%);
+  filter:blur(4px)
+}
+#desktop:after{z-index:-1;background:linear-gradient(115deg,rgba(0,10,27,.28),transparent 52%,rgba(194,248,255,.08))}
+.desktop-icons{position:absolute;z-index:2;left:15px;top:15px;display:grid;gap:7px}
+.desk-icon{
+  width:82px;padding:8px 5px;border:1px solid transparent;border-radius:10px;
+  color:#fff;text-align:center;font-size:12px;text-shadow:0 1px 5px #00132d;
+  cursor:pointer;user-select:none
+}
+.desk-icon:hover,.desk-icon.selected{background:#ffffff24;border-color:#ffffff40}
+.desk-icon .emoji{display:block;font-size:29px;margin-bottom:4px}
+.taskbar{
+  position:absolute;z-index:100;left:0;right:0;bottom:0;height:58px;
+  display:flex;align-items:center;justify-content:center;padding:0 14px;
+  background:rgba(244,248,250,.84);backdrop-filter:blur(24px) saturate(1.5);
+  border-top:1px solid rgba(255,255,255,.7)
+}
+.task-center{display:flex;align-items:center;gap:5px}
+.task-btn{
+  position:relative;width:43px;height:43px;border:0;border-radius:10px;
+  background:transparent;display:grid;place-items:center;font-size:21px;
+  transition:background .15s,transform .15s
+}
+.task-btn:hover,.task-btn.active{background:#fff;transform:translateY(-2px)}
+.task-btn.running:after{
+  content:"";position:absolute;bottom:2px;left:17px;width:9px;height:3px;
+  border-radius:4px;background:var(--accent)
+}
+.start-logo{color:var(--accent);font-weight:800;font-size:25px}
+.task-left{position:absolute;left:17px;color:#425875;font-size:12px}
+.tray{position:absolute;right:13px;display:flex;align-items:center;gap:10px;color:#243951}
+.tray-button{border:0;background:transparent;border-radius:8px;padding:6px 8px;font-size:13px}
+.tray-button:hover{background:#ffffffaa}
+.clock{line-height:1.35;text-align:right;font-size:12px}
+#start{
+  display:none;position:absolute;z-index:90;left:50%;bottom:70px;transform:translateX(-50%);
+  width:min(630px,calc(100vw - 20px));height:min(650px,calc(100vh - 82px));
+  padding:22px 24px 65px;background:var(--glass);backdrop-filter:blur(28px);
+  border:1px solid rgba(255,255,255,.85);border-radius:18px;box-shadow:var(--shadow);
+  color:var(--text);overflow:auto
+}
+#start.show{display:block;animation:rise .16s ease-out}
+@keyframes rise{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
+.search{
+  width:100%;height:42px;padding:0 13px;border:1px solid #d5deea;border-radius:9px;
+  background:var(--panel);color:var(--text);outline:none
+}
+.search:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.14)}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 10px;font-size:14px;font-weight:650}
+.section-head small{font-size:11px;color:var(--muted);font-weight:400}
+.app-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.app-tile{border:0;background:transparent;border-radius:10px;padding:10px 3px;color:var(--text);font-size:12px}
+.app-tile:hover,.recommended button:hover{background:var(--hover)}
+.app-tile b{display:block;font-size:27px;font-weight:400;margin-bottom:5px}
+.recommended{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.recommended button{
+  display:flex;align-items:center;gap:10px;text-align:left;padding:10px;
+  border:0;border-radius:9px;background:transparent;color:var(--text);font-size:12px
+}
+.recommended button>span:first-child{font-size:22px}
+.recommended small{display:block;margin-top:3px;color:var(--muted)}
+.profile{
+  position:absolute;left:0;right:0;bottom:0;height:55px;padding:0 21px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(232,239,247,.9);border-radius:0 0 18px 18px;font-size:12px
+}
+.avatar{width:30px;height:30px;display:grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;background:linear-gradient(135deg,#187bd1,#56cbd3)}
+.window{
+  display:none;position:absolute;z-index:20;left:50%;top:47%;
+  width:min(790px,calc(100vw - 24px));height:min(560px,calc(100vh - 95px));
+  min-width:300px;min-height:220px;resize:both;overflow:hidden;
+  flex-direction:column;background:var(--surface);border:1px solid rgba(255,255,255,.92);
+  border-radius:13px;box-shadow:0 28px 85px rgba(0,12,34,.48)
+}
+.window.open{display:flex;animation:window-in .14s ease-out}
+.window.minimized{display:none}
+@keyframes window-in{from{opacity:0;scale:.99}to{opacity:1;scale:1}}
+.titlebar{
+  flex:0 0 43px;display:flex;align-items:center;justify-content:space-between;
+  padding-left:14px;background:#edf2f7;border-bottom:1px solid var(--line);
+  cursor:move;user-select:none
+}
+.title-left{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:650}
+.controls{height:100%;display:flex}
+.controls button{width:44px;border:0;background:transparent;color:#43556a;font-size:14px}
+.controls button:hover{background:#dce5ef}
+.controls .close:hover{background:#d83b45;color:white}
+.content{padding:21px;overflow:auto;flex:1;color:var(--text)}
+.h1{font-size:24px;line-height:1.2;font-weight:650;margin:0 0 6px}
+.muted{color:var(--muted);font-size:13px}
+.btn{
+  padding:8px 12px;border:1px solid #d1dce8;border-radius:8px;
+  background:var(--panel);color:var(--text);font-size:13px
+}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(.95)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-top:18px}
+.card{padding:15px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.card h3{margin:0 0 7px;font-size:14px}
+.card p{margin:0;line-height:1.5}
+.explorer{height:100%;display:grid;grid-template-columns:165px 1fr;gap:16px}
+.nav button,.settings-nav button{
+  display:block;width:100%;padding:10px;text-align:left;border:0;
+  border-radius:7px;background:transparent;color:var(--text);font-size:13px
+}
+.nav button:hover,.nav button.selected,.settings-nav button:hover,.settings-nav button.selected{background:var(--hover)}
+.files{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:14px}
+.file{padding:13px 5px;text-align:center;border:1px solid transparent;border-radius:9px;font-size:12px}
+.file:hover{background:var(--hover);border-color:var(--line)}
+.file b{display:block;font-size:30px;margin-bottom:7px}
+.note-wrap{height:100%;display:flex;flex-direction:column}
+.note-toolbar{padding:8px;display:flex;gap:7px;border-bottom:1px solid var(--line)}
+.note{flex:1;width:100%;min-height:200px;padding:16px;border:0;resize:none;outline:none;background:var(--panel);color:var(--text);font:14px/1.6 Consolas,monospace}
+.calc{max-width:350px;margin:auto}
+.display{width:100%;height:66px;margin-bottom:10px;padding:12px;text-align:right;font-size:28px;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:9px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.keys button{height:50px;border:0;border-radius:8px;background:#e8eef5;color:#203a56;font-size:17px}
+.keys button:hover{background:#d5e5f5}
+.keys .equals{background:var(--accent);color:#fff}
+.settings-layout{display:grid;grid-template-columns:170px 1fr;gap:16px}
+.setting-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-size:13px}
+.switch{width:42px;height:24px;padding:3px;border:0;border-radius:20px;background:#aebdcb}
+.switch:after{content:"";display:block;width:18px;height:18px;border-radius:50%;background:#fff;transition:.18s}
+.switch.on{background:var(--accent)}
+.switch.on:after{transform:translateX(18px)}
+.store-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:15px}
+.store-card{display:flex;flex-direction:column;gap:8px;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.store-card .app-emoji{font-size:29px}
+.store-card h3{font-size:14px;margin:0}
+.store-card p{flex:1;margin:0;color:var(--muted);font-size:12px;line-height:1.45}
+.store-card button{align-self:flex-start}
+#paintCanvas{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:8px;touch-action:none}
+.context,.calendar-pop{
+  display:none;position:absolute;z-index:110;padding:6px;background:var(--glass);
+  backdrop-filter:blur(20px);border:1px solid #fff;border-radius:10px;box-shadow:var(--shadow)
+}
+.context{width:195px}
+.context button{display:block;width:100%;padding:10px;text-align:left;border:0;background:transparent;border-radius:6px;font-size:13px}
+.context button:hover{background:var(--hover)}
+.calendar-pop{right:12px;bottom:68px;width:280px;padding:17px}
+.calendar-pop strong{display:block;margin-bottom:6px}
+.calendar-pop p{margin:4px 0;color:var(--muted);font-size:13px}
+.toast{
+  display:none;position:absolute;z-index:120;right:18px;bottom:72px;
+  max-width:min(360px,calc(100vw - 36px));padding:12px 16px;
+  color:var(--text);background:var(--glass);border:1px solid #fff;
+  border-radius:10px;box-shadow:var(--shadow);font-size:13px
+}
+body.dark{
+  color-scheme:dark;--text:#e7edf5;--muted:#a2afbf;--surface:#202b39;
+  --panel:#273444;--line:#3a495b;--hover:#35465a;--glass:rgba(31,43,59,.95)
+}
+body.dark .titlebar{background:#273444}
+body.dark .profile{background:rgba(35,48,65,.96)}
+body.dark .taskbar{background:rgba(31,43,55,.86);border-color:#526073}
+body.dark .task-left,body.dark .tray{color:#e5edf6}
+body.dark .task-btn{color:#edf4fc}
+body.dark .task-btn:hover,body.dark .task-btn.active{background:#39495b}
+body.dark .keys button{background:#35465a;color:#ecf4ff}
+body.dark .controls button{color:#e2ebf5}
+@media(max-width:620px){
+  .task-left{display:none}
+  .app-grid{grid-template-columns:repeat(4,1fr)}
+  #start{padding:16px 16px 65px}
+  .recommended{grid-template-columns:1fr}
+  .settings-layout,.explorer{grid-template-columns:1fr}
+  .settings-nav{display:flex;overflow:auto}
+  .settings-nav button{min-width:100px}
+  .window{height:76vh}
+  .taskbar{justify-content:flex-start}
+  .task-center{margin:auto}
+  .tray{right:5px;gap:3px}
+}
+</style>
+</head>
+<body>
+<div id="desktop">
+  <div class="desktop-icons" aria-label="Desktop apps">
+    <div class="desk-icon" data-app="explorer"><span class="emoji">📁</span>File Explorer</div>
+    <div class="desk-icon" data-app="notepad"><span class="emoji">📝</span>Notepad</div>
+    <div class="desk-icon" data-app="calculator"><span class="emoji">🧮</span>Calculator</div>
+    <div class="desk-icon" data-app="settings"><span class="emoji">⚙️</span>Settings</div>
+    <div class="desk-icon" data-app="store"><span class="emoji">🛍️</span>App Store</div>
+  </div>
+
+  <section id="start" aria-label="Start menu">
+    <input class="search" id="search" placeholder="Search apps…" aria-label="Search apps">
+    <div class="section-head">Pinned apps <small>Your desktop essentials</small></div>
+    <div class="app-grid" id="appGrid"></div>
+    <div class="section-head">Recommended <small>Quick access</small></div>
+    <div class="recommended">
+      <button data-app="notepad"><span>📝</span><span><b>Write a quick note</b><small>Open Notepad</small></span></button>
+      <button data-app="store"><span>🛍️</span><span><b>Discover software</b><small>Open App Store</small></span></button>
+    </div>
+    <div class="profile">
+      <span style="display:flex;align-items:center;gap:9px"><span class="avatar">A</span><b>Abdul Muqeet</b></span>
+      <button class="btn" id="aboutButton" title="About this desktop">ⓘ</button>
+    </div>
+  </section>
+
+  <section class="window" id="explorer" data-title="File Explorer">
+    <div class="titlebar"><div class="title-left">📁 File Explorer</div><div class="controls">
+      <button data-action="minimize" title="Minimize">—</button><button data-action="maximize" title="Maximize">□</button><button class="close" data-action="close" title="Close">✕</button>
+    </div></div>
+    <div class="content">
+      <div class="explorer">
+        <nav class="nav" id="explorerNav">
+          <button class="selected" data-folder="Home">🏠 Home</button><button data-folder="Desktop">🖥 Desktop</button>
+          <button data-folder="Documents">📄 Documents</button><button data-folder="Downloads">⬇ Downloads</button>
+          <button data-folder="Pictures">🖼 Pictures</button><button data-folder="Music">🎵 Music</button>
+        </nav>
+        <div><h2 class="h1" id="folderTitle">Home</h2><p class="muted">Quick access to your folders</p>
+          <div class="files" id="folderFiles"></div>
+          <p class="muted" style="margin-top:16px">Demo folders only — this browser app does not access your computer’s files.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="window" id="notepad" data-title="Notepad">
+    <div class="titlebar"><div class="title-left">📝 Notepad</div><div class="controls">
+      <button data-action="minimize" title="Minimize">—</button><button data-action="maximize" title="Maximize">□</button><button class="close" data-action="close" title="Close">✕</button>
+    </div></div>
+    <div class="note-wrap">
+      <div class="note-toolbar"><button class="btn" id="newNote">New</button><button class="btn primary" id="saveNote">Download .txt</button><span class="muted" id="noteStatus" style="align-self:center"></span></div>
+      <textarea class="note" id="note" placeholder="Start typing your ideas…"></textarea>
+    </div>
+  </section>
+
+  <section class="window" id="calculator" data-title="Calculator">
+    <div class="titlebar"><div class="title-left">🧮 Calculator</div><div class="controls">
+      <button data-action="minimize" title="Minimize">—</button><button data-action="maximize" title="Maximize">□</button><button class="close" data-action="close" title="Close">✕</button>
+    </div></div>
+    <div class="content"><div class="calc"><input class="display" id="display" readonly aria-label="Calculator display"><div class="keys" id="keys"></div></div></div>
+  </section>
+
+  <section class="window" id="settings" data-title="Settings">
+    <div class="titlebar"><div class="title-left">⚙️ Settings</div><div class="controls">
+      <button data-action="minimize" title="Minimize">—</button><button data-action="maximize" title="Maximize">□</button><button class="close" data-action="close" title="Close">✕</button>
+    </div></div>
+    <div class="content"><div class="settings-layout">
+      <nav class="settings-nav"><button>System</button><button>Devices</button><button>Network</button><button class="selected">Personalization</button><button>Accounts</button></nav>
+      <div><h2 class="h1">Personalization</h2><p class="muted">Make your desktop feel like yours.</p>
+        <div class="setting-row"><span><b>Dark appearance</b><br><small class="muted">Change the interface theme</small></span><button class="switch" id="darkSwitch" aria-label="Toggle dark appearance"></button></div>
+        <div class="setting-row"><span><b>Wallpaper</b><br><small class="muted">Choose a desktop background</small></span>
+          <span><button class="btn" data-wall="ocean">Ocean</button> <button class="btn" data-wall="violet">Violet</button> <button class="btn" data-wall="midnight">Midnight</button></span>
+        </div>
+        <div class="setting-row"><span><b>Accent color</b><br><small class="muted">Choose your highlight color</small></span><input type="color" id="accentColor" value="#1687e8"></div>
+        <div class="setting-row"><span><b>About Muqeet OS</b><br><small class="muted">Independent desktop concept</small></span><button class="btn" data-app="about">View</button></div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="window" id="browser" data-title="Browser">
+    <div class="titlebar"><div class="title-left">🌐 Browser</div><div class="controls">
+      <button data-action="minimize" title="Minimize">—</button><button data-action="maximize" title="Maximize">□</button><button class="close" data-action="close" title="Close">✕</button>
+    </div></div>
+    <div class="content"><h2 class="h1">Open a website</h2><p class="muted">The page will open in a new browser tab.</p>
+      <form id="browserForm" style="display:flex;gap:8px;margin-top:18px"><input class="search" id="url" placeholder="https://example.com" aria-label="Website address"><button class="btn primary">Go</button></form>
+      <p class="muted" style="margin-top:16px">Some websites may block opening inside embedded browsers.</p>
+    </div>
+  </section>
+
+  <section class="window" id="store" data-title="Muqeet App Store">
+    <div class="titlebar"><div class="title-left">🛍️ Muqeet App Store</div><div class="controls">
+      <button data-action="minimize" title="Minimize">—</button><button data-action="maximize" title="Maximize">□</button><button class="close" data-action="close" title="Close">✕</button>
+    </div></div>
+    <div class="content"><h2 class="h1">Discover apps</h2><p class="muted">A showcase of software. These buttons open official websites; nothing is installed.</p>
+      <input class="search" id="storeSearch" placeholder="Search software…" style="margin-top:12px">
+      <div class="store-grid" id="storeGrid">
+        <article class="store-card" data-name="Microsoft Edge browser"><div class="app-emoji">🌐</div><h3>Microsoft Edge</h3><p>Web browser for browsing, research and productivity.</p><button class="btn" data-url="https://www.microsoft.com/edge">Official website</button></article>
+        <article class="store-card" data-name="Google Chrome browser"><div class="app-emoji">🟡</div><h3>Google Chrome</h3><p>Popular browser with extensions and syncing.</p><button class="btn" data-url="https://www.google.com/chrome/">Official website</button></article>
+        <article class="store-card" data-name="Microsoft Word office"><div class="app-emoji">📘</div><h3>Microsoft Word</h3><p>Create documents, school work and reports.</p><button class="btn" data-url="https://www.microsoft.com/microsoft-365/word">Official website</button></article>
+        <article class="store-card" data-name="PowerPoint presentation"><div class="app-emoji">📊</div><h3>PowerPoint</h3><p>Build slides and presentations.</p><button class="btn" data-url="https://www.microsoft.com/microsoft-365/powerpoint">Official website</button></article>
+        <article class="store-card" data-name="Excel spreadsheet"><div class="app-emoji">📗</div><h3>Microsoft Excel</h3><p>Work with spreadsheets, tables and charts.</p><button class="btn" data-url="https://www.microsoft.com/microsoft-365/excel">Official website</button></article>
+        <article class="store-card" data-name="Visual Studio Code programming"><div class="app-emoji">💻</div><h3>Visual Studio Code</h3><p>Code editor for web development and programming.</p><button class="btn" data-url="https://code.visualstudio.com/">Official website</button></article>
+        <article class="store-card" data-name="Canva design"><div class="app-emoji">🎨</div><h3>Canva</h3><p>Design posters, graphics and presentations.</p><button class="btn" data-url="https://www.canva.com/">Official website</button></article>
+        <article class="store-card" data-name="VLC media player"><div class="app-emoji">🎬</div><h3>VLC Media Player</h3><p>Play common video and audio formats.</p><button class="btn" data-url="https://www.videolan.org/vlc/">Official website</button></article>
+        <article class="store-card" data-name="7-Zip archive"><div class="app-emoji">🗜️</div><h3>7-Zip</h3><p>Compress and extract archive files.</p><button class="btn" data-url="https://www.7-zip.org/">Official website</button></article>
+        <article class="store-card" data-name="Blender 3D"><div class="app-emoji">🧊</div><h3>Blender</h3><p>Create 3D art, animation and visual effects.</p><button class="btn" data-url="https://www.blender.org/">Official website</button></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="window" id="paint" data-title="Mini Paint">
+    <div class="titlebar"><div class="title-left">🎨 Mini Paint</div><div class="controls">
+      <button data-action="minimize" title="Minimize">—</button><button data-action="maximize" title="Maximize">□</button><button class="close" data-action="close" title="Close">✕</button>
+    </div></div>
+    <div class="content"><p class="muted">Draw with your mouse or finger.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center"><input type="color" id="paintColor" value="#1687e8" aria-label="Paint color"><button class="btn" id="clearCanvas">Clear</button><button class="btn" id="downloadCanvas">Save drawing</button></div>
+      <canvas id="paintCanvas" width="1000" height="470"></canvas>
+    </div>
+  </section>
+
+  <section class="window" id="about" data-title="About Muqeet OS">
+    <div class="titlebar"><div class="title-left">💻 About Muqeet OS</div><div class="controls">
+      <button data-action="minimize" title="Minimize">—</button><button data-action="maximize" title="Maximize">□</button><button class="close" data-action="close" title="Close">✕</button>
+    </div></div>
+    <div class="content"><h1 class="h1">Muqeet OS — Pro Edition</h1><p class="muted">Created by Abdul Muqeet</p>
+      <div class="cards"><div class="card"><h3>✨ Modern interface</h3><p class="muted">Glass-inspired panels, themes and desktop windows.</p></div>
+        <div class="card"><h3>⚡ Useful tools</h3><p class="muted">Notes, calculator, browser shortcuts and a drawing canvas.</p></div>
+        <div class="card"><h3>🛍️ Software showcase</h3><p class="muted">Browse a catalogue of well-known apps.</p></div></div>
+      <p class="muted" style="margin-top:18px">This is an independent browser-based desktop concept, not an official Microsoft product or a real operating system. Explorer uses demo folders, and the App Store does not install software.</p>
+    </div>
+  </section>
+
+  <div class="context" id="context">
+    <button data-app="settings">⚙️ Personalize</button><button data-app="store">🛍️ Open App Store</button>
+    <button data-app="about">💻 About this desktop</button><button id="refreshDesktop">↻ Refresh desktop</button>
+  </div>
+  <div class="calendar-pop" id="calendarPop"><strong id="calendarDate"></strong><p id="calendarTime"></p><p>Calendar and clock</p></div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <footer class="taskbar">
+    <div class="task-left">☀ &nbsp;Your desktop, your way</div>
+    <div class="task-center" id="taskCenter">
+      <button class="task-btn start-logo" id="startButton" title="Start">⊞</button>
+      <button class="task-btn" data-app="explorer" title="File Explorer">📁</button>
+      <button class="task-btn" data-app="browser" title="Browser">🌐</button>
+      <button class="task-btn" data-app="store" title="App Store">🛍️</button>
+      <button class="task-btn" data-app="notepad" title="Notepad">📝</button>
+      <button class="task-btn" data-app="calculator" title="Calculator">🧮</button>
+    </div>
+    <div class="tray"><button class="tray-button" id="calendarButton" title="Date and time">📶 &nbsp;🔊 &nbsp;🔋 &nbsp;<span class="clock" id="clock"></span></button></div>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const appInfo=[
+  ["explorer","📁","File Explorer","files folders documents"],
+  ["notepad","📝","Notepad","notes writing text"],
+  ["calculator","🧮","Calculator","math numbers"],
+  ["settings","⚙️","Settings","personalization theme"],
+  ["browser","🌐","Browser","web internet"],
+  ["store","🛍️","App Store","software apps"],
+  ["paint","🎨","Paint","drawing art"],
+  ["about","💻","About","system muqeet"]
+];
+const appGrid=$("appGrid");
+appInfo.forEach(([id,icon,name,keywords])=>{
+  const button=document.createElement("button");
+  button.className="app-tile";button.dataset.app=id;button.dataset.search=(name+" "+keywords).toLowerCase();
+  button.innerHTML="<b>"+icon+"</b>"+name;appGrid.appendChild(button);
+});
+
+let zIndex=20,toastTimer;
+function toast(message){
+  const element=$("toast");element.textContent=message;element.style.display="block";
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>element.style.display="none",2700);
+}
+function updateTaskbar(){
+  document.querySelectorAll(".task-btn[data-app]").forEach(button=>{
+    const windowEl=$(button.dataset.app);
+    button.classList.toggle("running",!!windowEl?.classList.contains("open"));
+    button.classList.toggle("active",!!windowEl?.classList.contains("open"));
+  });
+}
+function openApp(id){
+  const windowEl=$(id);
+  if(!windowEl)return;
+  $("start").classList.remove("show");
+  $("context").style.display="none";
+  if(windowEl.classList.contains("open")){windowEl.classList.remove("minimized")}
+  else{windowEl.classList.add("open");windowEl.classList.remove("minimized")}
+  windowEl.style.zIndex=++zIndex;
+  updateTaskbar();
+}
+function closeWindow(windowEl){
+  windowEl.classList.remove("open","minimized");updateTaskbar();
+}
+function minimizeWindow(windowEl){
+  windowEl.classList.add("minimized");updateTaskbar();
+}
+function maximizeWindow(windowEl){
+  if(windowEl.dataset.maximized==="true"){
+    const old=JSON.parse(windowEl.dataset.oldRect||"{}");
+    windowEl.style.left=old.left||"";windowEl.style.top=old.top||"";
+    windowEl.style.width=old.width||"";windowEl.style.height=old.height||"";
+    windowEl.style.transform=old.transform||"";
+    windowEl.dataset.maximized="false";
+  }else{
+    const rect=windowEl.getBoundingClientRect();
+    windowEl.dataset.oldRect=JSON.stringify({
+      left:windowEl.style.left||"",top:windowEl.style.top||"",
+      width:windowEl.style.width||"",height:windowEl.style.height||"",
+      transform:windowEl.style.transform||""
+    });
+    windowEl.style.left="8px";windowEl.style.top="8px";
+    windowEl.style.width="calc(100vw - 16px)";windowEl.style.height="calc(100vh - 74px)";
+    windowEl.style.transform="none";windowEl.dataset.maximized="true";
+  }
+}
+document.addEventListener("click",event=>{
+  const appButton=event.target.closest("[data-app]");
+  if(appButton){openApp(appButton.dataset.app);return}
+  const action=event.target.closest("[data-action]");
+  if(action){
+    const windowEl=action.closest(".window");
+    if(action.dataset.action==="close")closeWindow(windowEl);
+    if(action.dataset.action==="minimize")minimizeWindow(windowEl);
+    if(action.dataset.action==="maximize")maximizeWindow(windowEl);
+    return;
+  }
+  const wallButton=event.target.closest("[data-wall]");
+  if(wallButton){setWallpaper(wallButton.dataset.wall);return}
+  const urlButton=event.target.closest("[data-url]");
+  if(urlButton){window.open(urlButton.dataset.url,"_blank","noopener,noreferrer");return}
+  if(!event.target.closest("#context"))$("context").style.display="none";
+  if(!event.target.closest("#start")&&!event.target.closest("#startButton"))$("start").classList.remove("show");
+  if(!event.target.closest("#calendarPop")&&!event.target.closest("#calendarButton"))$("calendarPop").style.display="none";
+});
+$("startButton").addEventListener("click",()=>{
+  $("start").classList.toggle("show");
+  if($("start").classList.contains("show"))$("search").focus();
+});
+$("aboutButton").addEventListener("click",()=>openApp("about"));
+
+document.querySelectorAll(".window").forEach(windowEl=>{
+  windowEl.addEventListener("pointerdown",()=>windowEl.style.zIndex=++zIndex);
+  const titlebar=windowEl.querySelector(".titlebar");
+  let dragging=false,dx=0,dy=0;
+  titlebar.addEventListener("pointerdown",event=>{
+    if(event.target.closest(".controls")||windowEl.dataset.maximized==="true")return;
+    dragging=true;
+    const rect=windowEl.getBoundingClientRect();dx=event.clientX-rect.left;dy=event.clientY-rect.top;
+    windowEl.style.left=rect.left+"px";windowEl.style.top=rect.top+"px";windowEl.style.transform="none";
+    titlebar.setPointerCapture(event.pointerId);
+  });
+  titlebar.addEventListener("pointermove",event=>{
+    if(!dragging)return;
+    const x=Math.max(0,Math.min(innerWidth-windowEl.offsetWidth,event.clientX-dx));
+    const y=Math.max(0,Math.min(innerHeight-75,event.clientY-dy));
+    windowEl.style.left=x+"px";windowEl.style.top=y+"px";
+  });
+  titlebar.addEventListener("pointerup",()=>dragging=false);
+  titlebar.addEventListener("pointercancel",()=>dragging=false);
+  titlebar.addEventListener("dblclick",event=>{
+    if(!event.target.closest(".controls"))maximizeWindow(windowEl);
+  });
+});
+document.querySelectorAll(".desk-icon").forEach(icon=>{
+  icon.addEventListener("click",()=>{document.querySelectorAll(".desk-icon").forEach(i=>i.classList.remove("selected"));icon.classList.add("selected")});
+  icon.addEventListener("dblclick",()=>openApp(icon.dataset.app));
+});
+$("search").addEventListener("input",()=>{
+  const query=$("search").value.trim().toLowerCase();
+  document.querySelectorAll(".app-tile").forEach(tile=>tile.style.display=tile.dataset.search.includes(query)?"":"none");
+});
+$("storeSearch").addEventListener("input",()=>{
+  const query=$("storeSearch").value.trim().toLowerCase();
+  document.querySelectorAll(".store-card").forEach(card=>card.style.display=card.dataset.name.toLowerCase().includes(query)?"":"none");
+});
+
+/* Explorer contains sample items only. */
+const folderData={
+  Home:[["🖥️","Desktop"],["📄","Documents"],["⬇️","Downloads"],["🖼️","Pictures"],["🎵","Music"]],
+  Desktop:[["📁","Projects"],["📝","Welcome.txt"]],
+  Documents:[["📄","School work"],["📄","Ideas.txt"]],
+  Downloads:[["📦","Sample archive.zip"]],
+  Pictures:[["🌄","Sample picture.jpg"]],
+  Music:[["🎵","Sample audio.mp3"]]
+};
+function showFolder(folder){
+  $("folderTitle").textContent=folder;
+  $("folderFiles").replaceChildren();
+  (folderData[folder]||[]).forEach(([emoji,name])=>{
+    const item=document.createElement("div");item.className="file";
+    item.innerHTML="<b>"+emoji+"</b>"+name;$("folderFiles").appendChild(item);
+  });
+  document.querySelectorAll("#explorerNav button").forEach(button=>button.classList.toggle("selected",button.dataset.folder===folder));
+}
+$("explorerNav").addEventListener("click",event=>{
+  const button=event.target.closest("[data-folder]");if(button)showFolder(button.dataset.folder);
+});
+showFolder("Home");
+
+/* Notes autosave locally in this browser; Download creates a plain text file. */
+const note=$("note");
+try{note.value=localStorage.getItem("muqeet-notes")||""}catch{}
+let noteSaveTimer;
+note.addEventListener("input",()=>{
+  clearTimeout(noteSaveTimer);
+  noteSaveTimer=setTimeout(()=>{
+    try{localStorage.setItem("muqeet-notes",note.value);$("noteStatus").textContent="Saved on this device"}
+    catch{$("noteStatus").textContent="Local saving unavailable"}
+  },300);
+});
+$("newNote").addEventListener("click",()=>{
+  if(note.value&&!confirm("Start a new note? Your current note is saved in this browser."))return;
+  note.value="";note.dispatchEvent(new Event("input"));note.focus();
+});
+$("saveNote").addEventListener("click",()=>{
+  const blob=new Blob([note.value],{type:"text/plain;charset=utf-8"});
+  const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download="Muqeet-Notes.txt";
+  link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);toast("Note downloaded.");
+});
+
+/* Basic calculator with a small arithmetic parser; no dynamic code execution. */
+const keyList=["C","±","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","⌫","="];
+let expression="";
+keyList.forEach(key=>{
+  const button=document.createElement("button");button.textContent=key;
+  if(key==="=")button.className="equals";
+  button.addEventListener("click",()=>calculatorKey(key));$("keys").appendChild(button);
+});
+function evaluateExpression(source){
+  const tokens=source.replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-").match(/\d*\.?\d+|[()+\-*/%]/g)||[];
+  let position=0;
+  function primary(){
+    const token=tokens[position++];
+    if(token==="("){const value=addSub();if(tokens[position++]!==")")throw Error("Parenthesis");return value}
+    if(token==="-"||token==="+")return (token==="-"?-1:1)*primary();
+    const value=Number(token);if(!Number.isFinite(value))throw Error("Number");return value;
+  }
+  function mulDiv(){
+    let value=primary();
+    while(["*","/","%"].includes(tokens[position])){
+      const op=tokens[position++],right=primary();
+      if((op==="/"||op==="%")&&right===0)throw Error("Zero");
+      value=op==="*"?value*right:op==="/"?value/right:value%right;
+    }
+    return value;
+  }
+  function addSub(){
+    let value=mulDiv();
+    while(tokens[position]==="+"||tokens[position]==="-"){
+      const op=tokens[position++],right=mulDiv();value=op==="+"?value+right:value-right;
+    }
+    return value;
+  }
+  if(!tokens.length)throw Error("Empty");
+  const result=addSub();if(position!==tokens.length||!Number.isFinite(result))throw Error("Invalid");
+  return result;
+}
+function calculatorKey(key){
+  const display=$("display");
+  if(key==="C"){expression="";display.value="";return}
+  if(key==="⌫"){expression=expression.slice(0,-1);display.value=expression;return}
+  if(key==="±"){expression=expression?("-("+expression+")"):"-";display.value=expression;return}
+  if(key==="="){
+    try{expression=String(evaluateExpression(expression));display.value=expression}
+    catch{display.value="Error";expression=""}
+    return;
+  }
+  expression+=key;display.value=expression;
+}
+$("browserForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  let address=$("url").value.trim();if(!address)return;
+  if(!/^https?:\/\//i.test(address))address="https://"+address;
+  try{const parsed=new URL(address);if (!["http:","https:"].includes(parsed.protocol))throw Error();
+    window.open(parsed.href,"_blank","noopener,noreferrer");
+  }catch{toast("Enter a valid website address.");}
+});
+
+/* Appearance options. */
+const wallpapers={
+  ocean:"linear-gradient(130deg,#081832 2%,#07578a 58%,#16a4ad 100%)",
+  violet:"linear-gradient(130deg,#241044 2%,#633da6 58%,#c05d9d 100%)",
+  midnight:"linear-gradient(130deg,#050912 2%,#14243b 58%,#263c59 100%)"
+};
+function setWallpaper(name){$("desktop").style.setProperty("--wallpaper",wallpapers[name]||wallpapers.ocean)}
+$("darkSwitch").addEventListener("click",()=>{
+  const enabled=document.body.classList.toggle("dark");
+  $("darkSwitch").classList.toggle("on",enabled);
+  try{localStorage.setItem("muqeet-dark",enabled?"1":"0")}catch{}
+});
+$("accentColor").addEventListener("input",event=>{
+  const color=event.target.value;
+  document.documentElement.style.setProperty("--accent",color);
+  const n=parseInt(color.slice(1),16);
+  document.documentElement.style.setProperty("--accent-rgb",`${n>>16},${(n>>8)&255},${n&255}`);
+});
+try{
+  if(localStorage.getItem("muqeet-dark")==="1"){document.body.classList.add("dark");$("darkSwitch").classList.add("on")}
+}catch{}
+
+/* Drawing canvas; save exports the image as a PNG. */
+const canvas=$("paintCanvas"),ctx=canvas.getContext("2d");let painting=false;
+function canvasPoint(event){
+  const rect=canvas.getBoundingClientRect();
+  return {x:(event.clientX-rect.left)*canvas.width/rect.width,y:(event.clientY-rect.top)*canvas.height/rect.height};
+}
+canvas.addEventListener("pointerdown",event=>{
+  painting=true;canvas.setPointerCapture(event.pointerId);const p=canvasPoint(event);
+  ctx.beginPath();ctx.moveTo(p.x,p.y);
+});
+canvas.addEventListener("pointermove",event=>{
+  if(!painting)return;const p=canvasPoint(event);
+  ctx.strokeStyle=$("paintColor").value;ctx.lineWidth=5;ctx.lineCap="round";
+  ctx.lineJoin="round";ctx.lineTo(p.x,p.y);ctx.stroke();
+});
+canvas.addEventListener("pointerup",()=>painting=false);
+canvas.addEventListener("pointercancel",()=>painting=false);
+$("clearCanvas").addEventListener("click",()=>ctx.clearRect(0,0,canvas.width,canvas.height));
+$("downloadCanvas").addEventListener("click",()=>{
+  const link=document.createElement("a");link.download="Muqeet-Drawing.png";
+  link.href=canvas.toDataURL("image/png");link.click();
+});
+
+/* Clock, date panel and desktop context menu. */
+function updateClock(){
+  const now=new Date();
+  $("clock").innerHTML=now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+"<br>"+now.toLocaleDateString();
+  $("calendarDate").textContent=now.toLocaleDateString([],{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  $("calendarTime").textContent=now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+setInterval(updateClock,1000);updateClock();
+$("calendarButton").addEventListener("click",()=>{
+  const pop=$("calendarPop");pop.style.display=pop.style.display==="block"?"none":"block";updateClock();
+});
+$("desktop").addEventListener("contextmenu",event=>{
+  if(event.target.closest(".window")||event.target.closest("#start"))return;
+  event.preventDefault();const menu=$("context");menu.style.display="block";
+  menu.style.left=Math.min(event.clientX,innerWidth-205)+"px";
+  menu.style.top=Math.min(event.clientY,innerHeight-205)+"px";
+});
+$("refreshDesktop").addEventListener("click",()=>location.reload());
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"){
+    $("start").classList.remove("show");$("context").style.display="none";$("calendarPop").style.display="none";
+  }
+  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="e"){event.preventDefault();openApp("explorer")}
+  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="n"&&event.target!==note){event.preventDefault();openApp("notepad")}
+});
+</script>
+</body>
+</html>
